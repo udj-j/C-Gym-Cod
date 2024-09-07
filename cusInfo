@@ -1,0 +1,195 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using term3_ali.App_Code;
+
+namespace Project_6178
+{
+    public partial class About : Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+
+
+            if (!IsPostBack)
+            {
+                // Initialize controls here
+                populdateDdlNationality();
+                populdateDdlMembership();
+            }
+
+
+        }
+
+        public override void VerifyRenderingInServerForm(Control control)
+        {
+
+        }
+
+
+
+        protected void populdateDdlNationality()
+        {
+            CRUD myCrud = new CRUD();
+            string mysql = @"select nationalityId , nationality from Nationality";
+            SqlDataReader dr = myCrud.getDrPassSql(mysql);
+            ddlNat.DataTextField = "nationality";
+            ddlNat.DataValueField = "nationalityId";
+            ddlNat.DataSource = dr;
+            ddlNat.DataBind();
+
+        }
+
+
+
+        protected void populdateDdlMembership()
+        {
+            CRUD myCrud = new CRUD();
+            string mysql = @"select membershipId , membershipType from Membership";
+            SqlDataReader dr = myCrud.getDrPassSql(mysql);
+            ddlMem.DataTextField = "membershipType";
+            ddlMem.DataValueField = "membershipId";
+            ddlMem.DataSource = dr;
+            ddlMem.DataBind();
+
+        }
+
+
+
+
+        // Show Information
+        protected void btnInfo_Click(object sender, EventArgs e)
+        {
+
+            CRUD myCrud = new CRUD();
+            string mysql = @"select * from v_cusInfo";
+            SqlDataReader dr = myCrud.getDrPassSql(mysql);
+            gvInfo.DataSource = dr;
+            gvInfo.DataBind();
+        }
+
+        //Update
+        protected void btnUpd_Click(object sender, EventArgs e)
+        {
+
+
+
+            if (String.IsNullOrEmpty(txtCustomerId.Text))
+            {
+                lblOutput2.Text = "Please Enter Customer ID";
+                return;
+            }
+
+            CRUD myCrud = new CRUD();
+            string mySql = @"update customer 
+            set fName=@fName, lName=@lName, dob=@dob, cell=@cell, email=@email, startingDate=@startingDate,
+            nationalityId=@nationalityId, membershipId=@membershipId, chronicDiseases=@chronicDiseases 
+            where customerId=@customerId";
+            Dictionary<string, object> myPara = new Dictionary<string, object>();
+            String strCustomerId = txtCustomerId.Text;
+            String strFName = !string.IsNullOrEmpty(txtFName.Text) ? txtFName.Text : string.Empty;
+            String strLName = !string.IsNullOrEmpty(txtLName.Text) ? txtLName.Text : string.Empty;
+            String strDob = !string.IsNullOrEmpty(txtDob.Text) ? txtDob.Text : string.Empty;
+            String strCell = !string.IsNullOrEmpty(txtCell.Text) ? txtCell.Text : string.Empty;
+            String strEmail = !string.IsNullOrEmpty(txtEmail.Text) ? txtEmail.Text : string.Empty;
+            String strStDate = !string.IsNullOrEmpty(txtStDate.Text) ? txtStDate.Text : string.Empty;
+            String ddlNatId = ddlNat.SelectedItem != null && !string.IsNullOrEmpty(ddlNat.SelectedItem.Value) ? ddlNat.SelectedItem.Value : string.Empty;
+            String ddlMemId = ddlMem.SelectedItem != null && !string.IsNullOrEmpty(ddlMem.SelectedItem.Value) ? ddlMem.SelectedItem.Value : string.Empty;
+
+            myPara.Add("@customerId", strCustomerId);
+            myPara.Add("@fName", strFName);
+            myPara.Add("@LName", strLName);
+            myPara.Add("@dob", strDob);
+            myPara.Add("@cell", strCell);
+            myPara.Add("@email", strEmail);
+            myPara.Add("@startingDate", strStDate);
+            myPara.Add("@nationalityId", ddlNatId);
+            myPara.Add("@membershipId", ddlMemId);
+
+            string chkValue = "";
+
+            // Loop through each item in chkDis (checkbox list)
+            for (int i = 0; i < chkDis.Items.Count; i++)
+            {
+                if (chkDis.Items[i].Selected)
+                {
+                    chkValue += chkDis.Items[i].Text + ","; // Concatenate selected checkbox name
+                }
+            }
+
+            chkValue = chkValue.TrimEnd(','); // Remove the trailing comma
+
+            // Add concatenated values to parameters
+            myPara.Add("@chronicDiseases", chkValue);
+
+            // Execute the update query using myCrud with mySql and myPara
+            // Your update query execution code here
+
+            int rtn = myCrud.InsertUpdateDelete(mySql, myPara);
+            if (rtn >= 1)
+            { lblOutput.Text = "Operation Successfull!"; }
+            else
+            { lblOutput2.Text = "Operation Failed!"; }
+
+        }
+
+        //Delete
+        protected void btnDel_Click(object sender, EventArgs e)
+        {
+            if (String.IsNullOrEmpty(txtCustomerId.Text))
+            {
+                lblOutput2.Text = "Please Enter Customer ID" +
+                    " ";
+                return;
+            }
+
+            CRUD myCrud = new CRUD();
+            string mySql = @"Delete from customer where customerId = @customerId ";
+            Dictionary<string, object> myPara = new Dictionary<string, object>();
+            string strCustomerId = txtCustomerId.Text;
+            myPara.Add("@customerId", strCustomerId);
+            int rtn = myCrud.InsertUpdateDelete(mySql, myPara);
+            if (rtn >= 1)
+            { lblOutput.Text = "Operation Successfull!"; }
+            else
+            { lblOutput2.Text = "Operation Failed!"; }
+        }
+
+        public static void ExportGridToExcel(GridView myGv) // working 1
+        {
+            HttpContext.Current.Response.Clear();
+            HttpContext.Current.Response.Buffer = true;
+            HttpContext.Current.Response.ClearContent();
+            HttpContext.Current.Response.ClearHeaders();
+            HttpContext.Current.Response.Charset = "";
+            string FileName = "ExportedReport_" + DateTime.Now + ".xls";
+            StringWriter strwritter = new StringWriter();
+            HtmlTextWriter htmltextwrtter = new HtmlTextWriter(strwritter);
+            HttpContext.Current.Response.Cache.SetCacheability(HttpCacheability.NoCache);
+            HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";
+            HttpContext.Current.Response.AddHeader("Content-Disposition", "attachment;filename=" + FileName);
+            myGv.GridLines = GridLines.Both;
+            myGv.HeaderStyle.Font.Bold = true;
+            myGv.RenderControl(htmltextwrtter);
+            HttpContext.Current.Response.Write(strwritter.ToString());
+            HttpContext.Current.Response.End();
+        }
+
+        protected void btnExprt_Click(object sender, EventArgs e)
+        {
+            ExportGridToExcel(gvInfo);
+        }
+
+
+
+
+
+
+    }
+}
