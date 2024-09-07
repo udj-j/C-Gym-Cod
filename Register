@@ -1,0 +1,185 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using term3_ali.App_Code;
+
+namespace Project_6178.demo
+{
+    public partial class WebForm1 : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+            //method will be call when page loaded for first time
+            if (!Page.IsPostBack)
+            {
+
+                populdateDdlNationality();
+                populateDdlGender();
+                populdateDdlMembership();
+            }
+
+        }
+
+
+        //List of Nationality
+        protected void populdateDdlNationality()
+        {
+            CRUD myCrud = new CRUD();
+            string mysql = @"select nationalityId , nationality from Nationality";
+            SqlDataReader dr = myCrud.getDrPassSql(mysql);
+            ddlNat.DataTextField = "nationality";
+            ddlNat.DataValueField = "nationalityId";
+            ddlNat.DataSource = dr;
+            ddlNat.DataBind();
+
+        }
+
+
+        //RadioButton For Gender
+        protected void populateDdlGender()
+        {
+            CRUD myCrud = new CRUD();
+            string mysql = @"select genderId, gender from Gender";
+            SqlDataReader dr = myCrud.getDrPassSql(mysql);
+            rdoGen.DataTextField = "gender";
+            rdoGen.DataValueField = "genderId";
+            rdoGen.DataSource = dr;
+            rdoGen.DataBind();
+
+        }
+
+
+
+
+        //List of Membership
+        protected void populdateDdlMembership()
+        {
+            CRUD myCrud = new CRUD();
+            string mysql = @"select membershipId , membershipType from Membership";
+            SqlDataReader dr = myCrud.getDrPassSql(mysql);
+            ddlMem.DataTextField = "membershipType";
+            ddlMem.DataValueField = "membershipId";
+            ddlMem.DataSource = dr;
+            ddlMem.DataBind();
+
+        }
+
+        // button that on it click will insert the data into DB
+        protected void btnInsert_Click1(object sender, EventArgs e)
+        {
+
+
+
+            if (String.IsNullOrEmpty(txtFName.Text))
+            {
+                lblOutput2.Text = "Please Enter Your First Name ";
+                return;
+            }
+            if (String.IsNullOrEmpty(txtLName.Text))
+            {
+                lblOutput2.Text = "Please Enter Your Last Name ";
+                return;
+            }
+            if (String.IsNullOrEmpty(txtDob.Text))
+            {
+                lblOutput2.Text = "Please Enter Your Deta of Birth ";
+                return;
+            }
+            if (String.IsNullOrEmpty(txtCell.Text))
+            {
+                lblOutput2.Text = "Please Enter Your Phone Noumber ";
+                return;
+            }
+
+            if (String.IsNullOrEmpty(txtStDate.Text))
+            {
+                lblOutput2.Text = "Please Enter Your Starting Date ";
+                return;
+
+                if (String.IsNullOrEmpty(ddlNat.SelectedItem.Value))
+                {
+                    lblOutput2.Text = "Please Chosse your Nationality ";
+                    return;
+                }
+                if (String.IsNullOrEmpty(rdoGen.SelectedItem.Value))
+                {
+                    lblOutput2.Text = "Please Chosse your Gender ";
+                    return;
+                }
+                if (String.IsNullOrEmpty(ddlMem.SelectedItem.Value))
+                {
+                    lblOutput2.Text = "Please Chosse your Membership ";
+                    return;
+                }
+            }
+
+
+            String strFName = txtFName.Text;
+            String strLName = txtLName.Text;
+            String strDob = txtDob.Text;
+            String strCell = txtCell.Text;
+            String strEmail = txtEmail.Text;
+            String strStDate = txtStDate.Text;
+            String ddlNatId = ddlNat.SelectedItem.Value;
+            String rdoGenId = rdoGen.SelectedItem.Value;
+            String ddlMemId = ddlMem.SelectedItem.Value;
+
+            CRUD myCrud = new CRUD();
+            String mysql = @"INSERT INTO customer (fName, lName, dob, cell, email, startingDate,
+                                nationalityId, genderId, membershipId , chronicDiseases)
+                    VALUES (@fName,@lName,@dob,@cell,@email,@startingDate,@nationalityId,@genderId
+                        ,@membershipId ,@chronicDiseases)";
+            Dictionary<String, object> myPara = new Dictionary<String, object>();
+            myPara.Add("@fName", strFName);
+            myPara.Add("@LName", strLName);
+            myPara.Add("@dob", strDob);
+            myPara.Add("@cell", strCell);
+            myPara.Add("@email", strEmail);
+            myPara.Add("@startingDate", strStDate);
+            myPara.Add("@nationalityId", ddlNatId);
+            myPara.Add("@genderId", rdoGenId);
+            myPara.Add("@membershipId", ddlMemId);
+
+            // Initialize variables to store concatenated values
+            // Assuming myPara is a dictionary or some other collection to store parameters for a database query
+
+            // Initialize chkValue to an empty string
+            string chkValue = "";
+
+            // Loop through each item in chkDis (checkbox list)
+            for (int i = 0; i < chkDis.Items.Count; i++)
+            {
+                if (chkDis.Items[i].Selected)
+                {
+                    chkValue += chkDis.Items[i].Text + ","; // Concatenate selected checkbox name
+                }
+            }
+
+            chkValue = chkValue.TrimEnd(','); // Remove the trailing comma
+
+            // Add concatenated values to parameters
+            myPara.Add("@chronicDiseases", chkValue);
+
+
+            int rtn = myCrud.InsertUpdateDelete(mysql, myPara);
+            if (rtn >= 1)
+
+            { lblOutput.Text = "Operation Successfull !!"; }
+
+            else
+            { lblOutput2.Text = "Operation Failed !!"; }
+
+        }
+
+
+
+
+
+
+    }
+}
